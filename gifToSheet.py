@@ -1,8 +1,8 @@
-from tkinter import Tk, filedialog
+from tkinter import Tk, filedialog, simpledialog
 from PIL import Image
 import os
 
-# Função para selecionar o GIF e o diretório de saída
+# Função para selecionar o GIF, o diretório de saída e o tamanho dos sprites
 def select_files():
     # Selecionar GIF
     gif_path = filedialog.askopenfilename(title="Selecione o GIF", filetypes=[("GIF Files", "*.gif")])
@@ -12,6 +12,14 @@ def select_files():
     # Selecionar diretório de saída
     output_folder = filedialog.askdirectory(title="Selecione o diretório de saída")
     if not output_folder:
+        return
+
+    # Perguntar pela largura e altura desejada do sprite
+    width = simpledialog.askinteger("Largura do Sprite", "Escolha a largura do sprite:")
+    height = simpledialog.askinteger("Altura do Sprite", "Escolha a altura do sprite:")
+    
+    if not width or not height:
+        print("Largura ou altura inválida.")
         return
 
     # Criar uma nova pasta para o projeto
@@ -26,27 +34,22 @@ def select_files():
     sprite_sheet_path = os.path.join(project_folder, f"{gif_name}_sprite_sheet.png")  # Caminho do sprite sheet
     
     # Extrair frames do GIF
-    extract_frames(gif_path, sprites_folder)
+    extract_frames(gif_path, sprites_folder, width, height)
     
     # Criar o sprite sheet
-    frame_width, frame_height = get_frame_size(gif_path)
-    create_sprite_sheet(sprites_folder, sprite_sheet_path, frame_width, frame_height)
+    create_sprite_sheet(sprites_folder, sprite_sheet_path, width, height)
     
     print(f"Sprite sheet salvo em: {sprite_sheet_path}")
 
-# Função para extrair frames
-def extract_frames(gif_path, output_folder):
+# Função para extrair frames e redimensionar
+def extract_frames(gif_path, output_folder, width, height):
     with Image.open(gif_path) as gif:
         for frame in range(gif.n_frames):
             gif.seek(frame)
+            # Redimensiona o frame para o tamanho escolhido sem antialiasing
+            frame_image = gif.copy().resize((width, height), Image.NEAREST)
             frame_path = os.path.join(output_folder, f"frame_{frame}.png")
-            gif.save(frame_path, "PNG")
-
-# Função para obter o tamanho dos frames
-def get_frame_size(gif_path):
-    with Image.open(gif_path) as gif:
-        gif.seek(0)
-        return gif.width, gif.height
+            frame_image.save(frame_path, "PNG")
 
 # Função para criar o sprite sheet
 def create_sprite_sheet(frames_folder, sprite_sheet_path, frame_width, frame_height):
